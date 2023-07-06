@@ -11,7 +11,7 @@ import Icon from 'react-native-vector-icons/Ionicons'; // Import the icon librar
 import { useAuthContext } from '../contexts/AuthContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useOrderContext } from '../contexts/OrderContext';
-
+import DeliveryAddressScreen from '../screens/DeliveryAddressScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -84,6 +84,7 @@ const HomeStackNavigator = () => {
       />
       {/* <HomeStack.Screen name="Dish" component={DishDetailsScreen} /> */}
       <HomeStack.Screen name="Basket" component={BasketScreen} />
+      <HomeStack.Screen name="Delivery" component={DeliveryAddressScreen} />
     </HomeStack.Navigator>
   );
 };

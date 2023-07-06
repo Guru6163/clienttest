@@ -15,9 +15,9 @@ const BasketScreen = () => {
   const onCreateOrder = async () => {
     setIsLoading(true);
     try {
-      await createOrder();
+      // await createOrder();
       setIsLoading(false);
-      navigation.navigate('Orders');
+      navigation.navigate('Delivery');
     } catch (error) {
       setIsLoading(false);
       Alert.alert('Order Failed', 'Failed to create the order. Please try again.');
