@@ -1,93 +1,77 @@
-import { createContext, useState, useEffect, useContext } from "react";
-import { DataStore } from "aws-amplify";
-import { Basket, BasketDish } from "../models";
+import { createContext, useState, useContext, useEffect } from "react";
+
 import { useAuthContext } from "./AuthContext";
 
 const BasketContext = createContext({});
 
 const BasketContextProvider = ({ children }) => {
     const { dbUser } = useAuthContext();
-
     const [restaurant, setRestaurant] = useState(null);
-    const [basket, setBasket] = useState(null);
-    const [basketDishes, setBasketDishes] = useState([]);
+    const [cartItems, setCartItems] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0)
 
-    const calculateTotalPrice = async (basketDishes, deliveryFee) => {
-        try {
-            // Use Promise.all to resolve all Dish promises in the basketDishes array
-            const resolvedBasketDishes = await Promise.all(
-                basketDishes.map(async (basketDish) => {
-                    const dish = await basketDish.Dish;
-                    return { ...basketDish, Dish: dish };
-                })
-            );
-
-            // Calculate the totalPrice
-            const totalPrice = resolvedBasketDishes.reduce(
-                (sum, basketDish) => sum + basketDish.quantity * basketDish.Dish.price,
-                deliveryFee
-            );
-
-            return totalPrice;
-        } catch (error) {
-            console.log("Error calculating total price:", error);
-            return 0; // Or handle the error based on your requirements
-        }
-    };
-
-    // Call the calculateTotalPrice function and update the state
     useEffect(() => {
-        calculateTotalPrice(basketDishes, restaurant?.deliveryFee).then((totalPrice) => {
-            setTotalPrice(totalPrice);
+        // Calculate total price when cart items change
+        calculateTotalPrice();
+    }, [cartItems]);
+
+    const calculateTotalPrice = () => {
+        let total = 0;
+        cartItems.forEach((item) => {
+            total += item.price * item.quantity;
         });
-    }, [basketDishes, restaurant?.deliveryFee]);
+        total += restaurant?.deliveryFee
+        setTotalPrice(total);
+    };
 
+    const addToCart = (item) => {
+        const updatedCartItems = [...cartItems];
+        const existingItemIndex = updatedCartItems.findIndex((cartItem) => cartItem.id === item.id);
 
-    useEffect(() => {
-        DataStore.query(Basket, (b) =>
-            b.restaurantID("eq", restaurant.id).userID("eq", dbUser.id)
-        ).then((baskets) => setBasket(baskets[0]));
-    }, [dbUser?.id, restaurant]);
-
-    useEffect(() => {
-        if (basket) {
-            DataStore.query(BasketDish, (bd) => bd.basketID("eq", basket.id)).then(
-                setBasketDishes
-            );
+        if (existingItemIndex !== -1) {
+            // If the item already exists in the cart, update its quantity
+            updatedCartItems[existingItemIndex].quantity++;
+        } else {
+            // If the item is not in the cart, add it with a quantity of 1
+            updatedCartItems.push({ ...item, quantity: 1 });
         }
-    }, [basket]);
 
-    const addDishToBasket = async (dish, quantity) => {
-        // get the existing basket or create a new one
-        let theBasket = basket || (await createNewBasket());
-
-        // create a BasketDish item and save to Datastore
-        const newDish = await DataStore.save(
-            new BasketDish({ quantity, Dish: dish, basketID: theBasket.id })
-        );
-
-        console.log("Basket-Dish============", newDish)
-        setBasketDishes([...basketDishes, newDish]);
+        setCartItems(updatedCartItems);
     };
 
-    const createNewBasket = async () => {
-        const newBasket = await DataStore.save(
-            new Basket({ userID: dbUser.id, restaurantID: restaurant.id })
-        );
-        setBasket(newBasket);
-        return newBasket;
+    const removeFromCart = (item) => {
+        const updatedCartItems = [...cartItems];
+        const existingItemIndex = updatedCartItems.findIndex((cartItem) => cartItem.id === item.id);
+
+        if (existingItemIndex !== -1) {
+            // If the item already exists in the cart, decrease its quantity
+            if (updatedCartItems[existingItemIndex].quantity > 1) {
+                updatedCartItems[existingItemIndex].quantity--;
+            } else {
+                // If the quantity is 1 and the "subtract" button is pressed again, remove the item from the cart
+                updatedCartItems.splice(existingItemIndex, 1);
+            }
+        }
+
+        setCartItems(updatedCartItems);
     };
+
+    const deleteFromCart = (item) => {
+        const updatedCartItems = cartItems.filter((cartItem) => cartItem.id !== item.id);
+        setCartItems(updatedCartItems);
+    }
 
     return (
         <BasketContext.Provider
             value={{
-                addDishToBasket,
                 setRestaurant,
                 restaurant,
-                basket,
-                basketDishes,
+                cartItems,
+                addToCart,
+                removeFromCart,
                 totalPrice,
+                deleteFromCart,
+                setCartItems
             }}
         >
             {children}

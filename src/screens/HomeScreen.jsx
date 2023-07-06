@@ -1,37 +1,39 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, ScrollView } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
+import { DataStore } from 'aws-amplify';
+import { Restaurant } from '../models';
 import Header from '../components/Header';
 import RestaurantCard from '../components/RestaurantCard';
-import { useEffect, useState } from 'react';
-import { DataStore } from "aws-amplify";
-import { Restaurant } from "../models"
 import CTASection from '../components/CTA';
 import Category from '../components/Category';
 
 const HomeScreen = ({ navigation }) => {
-
   const [restaurants, setRestaurants] = useState([]);
+  const isFocused = useIsFocused();
 
-  useEffect(() => {
-    const fetchRestaurants = async () => {
-      try {
-        const posts = await DataStore.query(Restaurant);
-        setRestaurants(posts);
-      } catch (error) {
-        console.log('Error fetching restaurants:', error);
-      }
-    };
-
-    fetchRestaurants();
+  const fetchRestaurants = useCallback(async () => {
+    try {
+      const posts = await DataStore.query(Restaurant);
+      setRestaurants(posts);
+    } catch (error) {
+      console.log('Error fetching restaurants:', error);
+    }
   }, []);
 
+  useEffect(() => {
+    fetchRestaurants();
+  }, [fetchRestaurants]);
+
+  useEffect(() => {
+    // Fetch restaurants data whenever the screen comes into focus
+    if (isFocused) {
+      fetchRestaurants();
+    }
+  }, [isFocused, fetchRestaurants]);
 
   const renderRestaurantItem = ({ item }) => {
-    return (
-      <RestaurantCard
-        data={item}
-      />
-    );
+    return <RestaurantCard data={item} />;
   };
 
   return (
@@ -39,7 +41,7 @@ const HomeScreen = ({ navigation }) => {
       <Header title="FoodX" />
       <ScrollView>
         <CTASection />
-        <Category/>
+        {/* <Category /> */}
         <FlatList
           style={styles.flatList}
           data={restaurants}
@@ -51,11 +53,10 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: 'white',
   },
   flatList: {
     flex: 1,

@@ -9,6 +9,10 @@ import BasketScreen from '../screens/BasketScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
 import Icon from 'react-native-vector-icons/Ionicons'; // Import the icon library
 import { useAuthContext } from '../contexts/AuthContext';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useOrderContext } from '../contexts/OrderContext';
+
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -17,9 +21,8 @@ function AppNavigation() {
   const { dbUser } = useAuthContext();
   return (
     <Stack.Navigator initialRouteName='Home' screenOptions={{ headerShown: false }}>
-      {
-        dbUser?.name ? <Stack.Screen name="Home" component={HomeBottomTabsScreen} /> : <Stack.Screen name="Profile" component={ProfileScreen} />
-      }
+      <Stack.Screen name="Home" component={HomeBottomTabsScreen} />  
+      <Stack.Screen name="Profile" component={ProfileScreen} />
     </Stack.Navigator>
   );
 }

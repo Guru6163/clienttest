@@ -17,13 +17,11 @@ const OrderStatus = {
   "DELIVERED": "DELIVERED"
 };
 
-const { Basket, OrderDish, Order, BasketDish, User, Dish, Restaurant } = initSchema(schema);
+const { OrderDish, Order, User, Dish, Restaurant } = initSchema(schema);
 
 export {
-  Basket,
   OrderDish,
   Order,
-  BasketDish,
   User,
   Dish,
   Restaurant,

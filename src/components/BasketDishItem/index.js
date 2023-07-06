@@ -1,35 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { BasketDish } from '../../models';
+import { DataStore } from 'aws-amplify';
+import { useBasketContext } from '../../contexts/BasketContext';
+
 
 const BasketDishItem = ({ basketDish }) => {
-  const getDishFromPromise = async () => {
-    try {
-      return await basketDish.Dish;
-    } catch (error) {
-      console.log('Error unwrapping Dish promise:', error);
-      return null;
-    }
+
+  const { deleteFromCart } = useBasketContext()
+
+  const handleRemove = async () => {
+    deleteFromCart(basketDish)
   };
-
-  const [dish, setDish] = useState(null);
-  useEffect(() => {
-    (async () => {
-      const unwrappedDish = await getDishFromPromise();
-      setDish(unwrappedDish);
-    })();
-  }, []);
-
-  if (!dish) {
-    return null;
-  }
 
   return (
     <View style={styles.container}>
       <View style={styles.itemDetailsContainer}>
-        <Text style={styles.itemNameText}>{dish.name}</Text>
+        <Text style={styles.itemNameText}>{basketDish.name}</Text>
         <Text style={styles.quantityText}>Quantity: {basketDish.quantity}</Text>
       </View>
-      <Text style={styles.itemPriceText}>${dish.price}</Text>
+      <Text style={styles.itemPriceText}>Rs {basketDish.price}</Text>
+      <TouchableOpacity style={styles.removeButton} onPress={handleRemove}>
+        <Icon name="close-circle" size={24} color="red" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -46,19 +40,22 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   itemNameText: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 4,
   },
   quantityText: {
-    fontSize: 14,
+    fontSize: 13,
     color: 'gray',
   },
   itemPriceText: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: 'bold',
     color: 'gray',
+  },
+  removeButton: {
+    marginLeft: 10,
   },
 });
 

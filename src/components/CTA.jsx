@@ -6,11 +6,11 @@ const CTASection = () => {
         <View style={styles.container}>
             <View style={styles.textContainer}>
                 <Text style={styles.title}>
-                    From kitchen to doorstep, experience a feast of flavors with us.
+                Hungry? We've got you covered!
                 </Text>
 
                 <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Get it Delivered</Text>
+                    <Text style={styles.buttonText}>Express Reach</Text>
                 </TouchableOpacity>
             </View>
 
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     button: {
         backgroundColor: '#1C64F2', // bg-emerald-600
         borderRadius: 8,
-        paddingVertical: 12, // py-3
+        paddingVertical: 6, // py-3
         paddingHorizontal: 24, // px-12
     },
     buttonText: {

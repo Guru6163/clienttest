@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     marginVertical:10,
   },
   categoryItem: {
-    backgroundColor: '#FF5D5A',
+    backgroundColor: '#1C64F2',
     borderRadius: 5,
     paddingHorizontal: 16,
     paddingVertical: 8,

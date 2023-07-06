@@ -1,38 +1,42 @@
 import { useState, useEffect } from "react";
 import { View, Image, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { DataStore } from "aws-amplify";
-import { Dish } from "../models";
 import { useBasketContext } from "../contexts/BasketContext";
 
 
 const DishItem = ({ dishItem }) => {
+    const {
+        cartItems,
+        addToCart,
+        removeFromCart,
+    } = useBasketContext();
 
-    const { addDishToBasket } = useBasketContext();
     const [quantity, setQuantity] = useState(1);
-    const inCart = true
-    const navigation = useNavigation();
-    const route = useRoute();
+    const [showControls, setShowControls] = useState(false);
 
-    const onAddToBasket = async () => {
-        await addDishToBasket(dishItem, quantity);
+    const onAddToCart = () => {
+        addToCart(dishItem);
+        setShowControls(true);
     };
 
     const onMinus = () => {
-        if (quantity > 1) {
-            setQuantity(quantity - 1);
-        }
+        removeFromCart(dishItem);
     };
 
     const onPlus = () => {
-        setQuantity(quantity + 1);
-    };
-
-    const getTotal = () => {
-        return (dishItem.price * quantity).toFixed(2);
+        addToCart(dishItem);
     };
 
 
+    useEffect(() => {
+        const cartItem = cartItems.find((item) => item.id === dishItem.id);
+        if (cartItem) {
+            setQuantity(cartItem.quantity);
+            setShowControls(true);
+        } else {
+            setQuantity(1);
+            setShowControls(false);
+        }
+    }, [cartItems, dishItem]);
 
     return (
         <View style={styles.dishContainer}>
@@ -40,37 +44,37 @@ const DishItem = ({ dishItem }) => {
             <View style={styles.dishDetails}>
                 <View style={styles.itemDetailsContainer}>
                     <Text style={styles.dishName}>{dishItem.name}</Text>
-                    <Text style={styles.dishPrice}>${dishItem.price}</Text>
+                    <Text style={styles.dishPrice}>Rs{dishItem.price}</Text>
                 </View>
 
-
-                <View style={styles.quantityContainer}>
-                    <TouchableOpacity
-                        style={styles.quantityButton}
-                        onPress={onMinus}
-                    >
-                        <Text style={styles.quantityButtonText}>-</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.quantityText}>{quantity}</Text>
-                    <TouchableOpacity
-                        style={styles.quantityButton}
-                        onPress={onPlus}
-                    >
-                        <Text style={styles.quantityButtonText}>+</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <Pressable onPress={onAddToBasket} style={styles.addButton}>
-                    <Text style={styles.addButtonText}>
-                        Add to Cart • ${getTotal()}
-                    </Text>
-                </Pressable>
-
-
+                {showControls ? (
+                    <View style={styles.quantityContainer}>
+                        <TouchableOpacity
+                            style={styles.quantityButton}
+                            onPress={onMinus}
+                        >
+                            <Text style={styles.quantityButtonText}>-</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.quantityText}>{quantity}</Text>
+                        <TouchableOpacity
+                            style={styles.quantityButton}
+                            onPress={onPlus}
+                        >
+                            <Text style={styles.quantityButtonText}>+</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <Pressable onPress={onAddToCart} style={styles.addButton}>
+                        <Text style={styles.addButtonText}>
+                            Add to Cart
+                        </Text>
+                    </Pressable>
+                )}
             </View>
         </View>
     );
 };
+
 
 const styles = StyleSheet.create({
     dishContainer: {
@@ -98,10 +102,10 @@ const styles = StyleSheet.create({
 
 
     addToCartButton: {
-        backgroundColor: '#ff5d5a',
+        backgroundColor: '#1C64F2',
         paddingVertical: 8,
         borderRadius: 8,
-        
+
         alignItems: 'center',
     },
     addToCartButtonText: {
@@ -123,12 +127,12 @@ const styles = StyleSheet.create({
     dishPrice: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#ff5d5a',
+        color: '#1C64F2',
     },
 
 
     addButton: {
-        backgroundColor: '#ff5d5a',
+        backgroundColor: '#1C64F2',
         paddingVertical: 14,
         borderRadius: 5,
         marginTop: 12,
@@ -144,29 +148,29 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-      },
-      quantityButton: {
-        backgroundColor: '#ff5d5a',
+    },
+    quantityButton: {
+        backgroundColor: '#1C64F2',
         paddingHorizontal: 5,
         paddingVertical: 5,
         borderRadius: 5,
         flex: 1,
         marginRight: 4,
-      },
-      quantityButtonText: {
+    },
+    quantityButtonText: {
         color: 'white',
         fontSize: 18,
         fontWeight: 'bold',
         textAlign: 'center',
-      },
-      quantityText: {
+    },
+    quantityText: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
         flex: 1,
         textAlign: 'center',
-      },
-      
+    },
+
 
 
 });

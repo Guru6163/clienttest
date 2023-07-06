@@ -6,21 +6,20 @@ import { Restaurant, Dish } from '../models';
 import { useBasketContext } from '../contexts/BasketContext';
 import { useNavigation } from '@react-navigation/native';
 import DishItem from '../components/DishItem';
+import { Ionicons } from '@expo/vector-icons';
+
 
 const RestaurantDetailScreen = ({ route }) => {
   const navigation = useNavigation();
   const id = route.params?.id;
   const [restaurant, setRestaurant] = useState(null);
   const [dishes, setDishes] = useState([]);
-  const [cartItems, setCartItems] = useState([]);
-  const [dish, setDish] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-
+  
   const {
     setRestaurant: setBasketRestaurant,
-    basket,
-    basketDishes,
-    addDishToBasket
+    cartItems,
+    addToCart,
+    removeFromCart,
   } = useBasketContext();
 
   useEffect(() => {
@@ -42,63 +41,11 @@ const RestaurantDetailScreen = ({ route }) => {
     fetchData();
   }, [id]);
 
-  // async function getDishById(dishId) {
-  //   try {
-  //     const dish = await DataStore.query(Dish, (dish) => dish.id.eq(dishId));
-  //     console.log("Matched Dish ======= ", dish);
-  //     return dish;
-  //   } catch (error) {
-  //     console.log('Error fetching dish by ID:', error);
-  //     return null;
-  //   }
-  // }
-
-  const addToCart = (item) => {
-    const updatedCartItems = [...cartItems];
-    const existingItemIndex = updatedCartItems.findIndex((cartItem) => cartItem.id === item.id);
-
-    if (existingItemIndex !== -1) {
-      // If the item already exists in the cart, update its quantity
-      updatedCartItems[existingItemIndex].quantity++;
-    } else {
-      // If the item is not in the cart, add it with a quantity of 1
-      updatedCartItems.push({ ...item, quantity: 1 });
-    }
-
-    setCartItems(updatedCartItems);
-  };
-
-  const subtractFromCart = (item) => {
-    const updatedCartItems = [...cartItems];
-    const existingItemIndex = updatedCartItems.findIndex((cartItem) => cartItem.id === item.id);
-
-    if (existingItemIndex !== -1) {
-      // If the item already exists in the cart, decrease its quantity
-      if (updatedCartItems[existingItemIndex].quantity > 1) {
-        updatedCartItems[existingItemIndex].quantity--;
-      } else {
-        // If the quantity is 1 and the "subtract" button is pressed again, remove the item from the cart
-        updatedCartItems.splice(existingItemIndex, 1);
-      }
-    }
-
-    setCartItems(updatedCartItems);
-  };
 
   useEffect(() => {
     setBasketRestaurant(restaurant);
   }, [restaurant]);
 
-  useEffect(() => {
-    const fetchDishes = async () => {
-      for (const element of cartItems) {
-        const { quantity, ...dish } = element;
-        addDishToBasket(dish, quantity);
-      }
-    };
-
-    fetchDishes();
-  }, [cartItems]);
 
   if (!restaurant) {
     return <ActivityIndicator size={"large"} color="gray" />;
@@ -109,8 +56,53 @@ const RestaurantDetailScreen = ({ route }) => {
       <DishItem
         dishItem={item}
         addToCart={addToCart}
-        subtractFromCart={subtractFromCart}
+        removeFromCart={removeFromCart}
       />
+    );
+  };
+
+  const getCategoryName = (category) => {
+    const categoryWithoutHyphen = category.replace(/-/g, " "); // Replace hyphen "-" with a space " "
+
+    switch (categoryWithoutHyphen) {
+      case "VEG":
+        return "Veg";
+      case "NON_VEG":
+        return "Non-Veg";
+      case "BOTH":
+        return "Veg and Non-Veg";
+      case "JUICES":
+        return "Juices";
+      default:
+        return capitalizeFirstLetter(categoryWithoutHyphen);
+    }
+  };
+
+
+  const renderRatingStars = () => {
+    const rating = restaurant.rating;
+    if (typeof rating !== 'number' || rating < 0) {
+      return null; // Return null or a fallback if rating is not a valid number
+    }
+
+    const filledStars = Math.floor(rating);
+    const halfStar = rating - filledStars >= 0.5;
+    const emptyStars = 5 - filledStars - (halfStar ? 1 : 0);
+
+    return (
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+      }}>
+        {Array.from({ length: filledStars }).map((_, index) => (
+          <Ionicons key={index} name="star" size={16} color="#FFD700" />
+        ))}
+        {halfStar && <Ionicons name="star-half" size={16} color="#FFD700" />}
+        {Array.from({ length: emptyStars }).map((_, index) => (
+          <Ionicons key={index} name="star-outline" size={16} color="#FFD700" />
+        ))}
+      </View>
     );
   };
 
@@ -118,11 +110,17 @@ const RestaurantDetailScreen = ({ route }) => {
     <View style={styles.container}>
       <Header title="FoodX" />
       {restaurant && (
-        <>
-          <Text style={[styles.restaurantName, styles.highlightedRestaurantName]}>
-            {restaurant.name}
-          </Text>
-        </>
+        <View style={styles.restaurantContainer}>
+          <Image source={{ uri: restaurant.image }} style={styles.restaurantImage} />
+          <View style={styles.restaurantDetails}>
+            <Text style={styles.restaurantName}>{restaurant.name}</Text>
+            <Text style={styles.restaurantCategory}>{getCategoryName(restaurant?.category)}</Text>
+            {renderRatingStars()}
+            <Text style={styles.deliveryTime}>
+              Delivery Time: {restaurant.minDeliveryTime}-{restaurant.maxDeliveryTime} mins
+            </Text>
+          </View>
+        </View>
       )}
 
       <FlatList
@@ -131,13 +129,13 @@ const RestaurantDetailScreen = ({ route }) => {
         renderItem={renderDishItem}
         style={styles.dishList}
       />
-      {basket && (
+      {cartItems && (
         <Pressable
           onPress={() => navigation.navigate("Cart")}
           style={styles.button}
         >
           <Text style={styles.buttonText}>
-            Open basket ({basketDishes.length})
+            Open basket ({cartItems.length})
           </Text>
         </Pressable>
       )}
@@ -162,11 +160,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   highlightedRestaurantName: {
-    backgroundColor: '#ff5d5a',
+    backgroundColor: '#1C64F2',
     color: 'white',
     paddingHorizontal: 8,
-    paddingVertical:5,
-    
+    paddingVertical: 5,
+
   },
 
   dishList: {
@@ -175,19 +173,59 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   button: {
-    backgroundColor: "#ff5d5a",
+    backgroundColor: "#1C64F2",
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
-    alignSelf: "center",
+    borderRadius: 5,
     marginBottom: 16,
+    alignSelf: 'center', // Center the button horizontally
+    width: "90%",
   },
+
   buttonText: {
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
     textAlign: "center",
   },
+  restaurantContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    marginBottom: 16, // Add margin bottom to create space between sections
+  },
+  restaurantImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    marginRight: 16,
+  },
+  restaurantDetails: {
+    flex: 1,
+  },
+  restaurantName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  restaurantCategory: {
+    fontSize: 16,
+    color: 'gray',
+    marginTop: 4,
+  },
+  deliveryTime: {
+    fontSize: 14,
+    color: 'gray',
+    marginTop: 8,
+  },
+
 });
 
 export default RestaurantDetailScreen;

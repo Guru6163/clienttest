@@ -8,7 +8,7 @@ const RestaurantCard = ({ data }) => {
   const handleCardPress = () => {
     navigation.navigate("Restaurant", { id: data.id });
   };
-  console.log(data)
+
   const renderRatingStars = () => {
     const rating = data.rating;
     if (typeof rating !== 'number' || rating < 0) {

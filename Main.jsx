@@ -7,6 +7,8 @@ import AppNavigation from './src/navigation/AppNavigation';
 import { NavigationContainer } from "@react-navigation/native";
 import AuthContextProvider from './src/contexts/AuthContext';
 import BasketContextProvider from './src/contexts/BasketContext';
+import OrderContextProvider from './src/contexts/OrderContext';
+
 
 Amplify.configure({
   ...config,
@@ -22,7 +24,9 @@ function Main() {
       <NavigationContainer>
         <AuthContextProvider>
           <BasketContextProvider>
-          <AppNavigation />
+            <OrderContextProvider>
+            <AppNavigation />
+            </OrderContextProvider>
           </BasketContextProvider>
         </AuthContextProvider>
       </NavigationContainer>
